@@ -1,0 +1,53 @@
+# kubernetes-manifests/ms-notificaciones.yaml
+
+# 1. Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-notificaciones-service
+  labels:
+    app: ms-notificaciones
+spec:
+  selector:
+    app: ms-notificaciones
+  ports:
+    - protocol: TCP
+      port: 3003
+      targetPort: 3003
+  type: ClusterIP
+---
+
+# 2. Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-notificaciones-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-notificaciones
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ms-notificaciones
+    spec:
+      containers:
+        - name: ms-notificaciones
+          image: ms-notificaciones:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3003
+          env:
+            # --- Variables de la Aplicación ---
+            - name: PORT
+              value: "3003"
+
+            # --- Conexión a RabbitMQ ---
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_URL

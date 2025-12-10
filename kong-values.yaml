@@ -1,0 +1,30 @@
+# kong-values.yaml
+
+# 1. --- CONFIGURACIÓN CRÍTICA: MODO DB-LESS ---
+# Esto es VITAL para evitar el CrashLoopBackOff.
+env:
+  database: "off" 
+
+# 2. --- CONFIGURACIÓN CRÍTICA: INGRESS CONTROLLER ---
+# Esto le dice al Helm Chart que active el controlador que lee los Ingress de Kubernetes.
+ingressController:
+  enabled: true
+  
+# 3. --- CONFIGURACIÓN DE LA API ADMIN ---
+# Esta sección asegura que el controlador de Ingress (el que fallaba antes) 
+# pueda conectarse internamente al proxy de Kong para configurarlo (puerto 8001).
+admin:
+  enabled: true
+  type: ClusterIP 
+  http:
+    enabled: true 
+    port: 8001 
+
+# 4. --- CONFIGURACIÓN DEL PROXY ---
+# Aseguramos que el Proxy se cree como LoadBalancer (para que Minikube lo exponga).
+proxy:
+  type: LoadBalancer
+
+# 5. --- OTRAS CONFIGURACIONES ---
+manager:
+  enabled: false

@@ -1,0 +1,125 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-usuarios-deployment
+  labels:
+    app: db-usuarios
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-usuarios
+  template:
+    metadata:
+      labels:
+        app: db-usuarios
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: db_usuarios
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-usuarios-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-usuarios-secret
+                  key: password
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim-usuarios
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-agenda-deployment
+  labels:
+    app: db-agenda
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-agenda
+  template:
+    metadata:
+      labels:
+        app: db-agenda
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: db_agenda
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-agenda-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-agenda-secret
+                  key: password
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim-agenda
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-tutorias-deployment
+  labels:
+    app: db-tutorias
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db-tutorias
+  template:
+    metadata:
+      labels:
+        app: db-tutorias
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: db_tutorias
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-tutorias-secret
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-tutorias-secret
+                  key: password
+          volumeMounts:
+            - name: postgres-storage
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim-tutorias

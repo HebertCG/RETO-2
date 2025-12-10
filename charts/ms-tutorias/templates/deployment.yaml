@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-tutorias-deployment
+  labels:
+    app: ms-tutorias
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: ms-tutorias
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ms-tutorias
+    spec:
+      containers:
+        - name: ms-tutorias
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.env.PORT | quote }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.jwtSecretName }}
+                  key: JWT_SECRET
+            - name: MS_USUARIOS_URL
+              value: {{ .Values.env.MS_USUARIOS_URL | quote }}
+            - name: MS_AGENDA_URL
+              value: {{ .Values.env.MS_AGENDA_URL | quote }}
+            - name: MS_NOTIFICACIONES_URL
+              value: {{ .Values.env.MS_NOTIFICACIONES_URL | quote }}
+            - name: DB_HOST
+              value: {{ .Values.env.DB_HOST | quote }}
+            - name: DB_PORT
+              value: {{ .Values.env.DB_PORT | quote }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.dbSecretName }}
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.dbSecretName }}
+                  key: password
+            - name: DB_NAME
+              value: {{ .Values.env.DB_NAME | quote }}
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.rabbitmqSecretName }}
+                  key: {{ .Values.rabbitMq.urlKey }}

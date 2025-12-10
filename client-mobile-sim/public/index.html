@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cliente Simulador - Tutorías</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 2rem; background-color: #121212; color: #e0e0e0; }
+        .container { max-width: 600px; margin: 0 auto; background: #1e1e1e; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: #ffffff; }
+        form { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+        .form-group { display: grid; gap: 0.5rem; }
+        label { font-weight: 600; color: #cccccc; }
+        input, button { padding: 0.75rem; border: 1px solid #333; border-radius: 4px; font-size: 1rem; }
+        input { background-color: #2d2d2d; color: #fff; }
+        button { background-color: #0d47a1; color: white; font-weight: 700; cursor: pointer; transition: background-color 0.2s; border: none; }
+        button:hover { background-color: #1565c0; }
+        #resultado { margin-top: 1.5rem; padding: 1rem; background: #2d2d2d; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; font-family: monospace; border: 1px solid #444; }
+        .error { background: #3e2723; color: #ffcdd2; border: 1px solid #b71c1c; }
+        .success { background: #1b5e20; color: #c8e6c9; border: 1px solid #2e7d32; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulador de Tutorías</h1>
+        <form id="tutoria-form">
+            <fieldset>
+                <legend><strong>1. Autenticación</strong></legend>
+                <div class="form-group">
+                    <label for="username">Usuario (estudiante):</label>
+                    <input type="text" id="username" name="username" value="ana.torres" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Contraseña:</label>
+                    <input type="password" id="password" name="password" value="password_ana" required>
+                </div>
+            </fieldset>
+
+            <fieldset>
+                <legend><strong>2. Datos de la Tutoría</strong></legend>
+                <div class="form-group">
+                    <label for="idTutor">ID del Tutor:</label>
+                    <input type="text" id="idTutor" name="idTutor" value="t09876" required>
+                </div>
+                <div class="form-group">
+                    <label for="fecha">Fecha y Hora (ISO 8601):</label>
+                    <input type="text" id="fecha" name="fecha" value="2025-12-20T10:00:00Z" required>
+                </div>
+                <div class="form-group">
+                    <label for="materia">Materia:</label>
+                    <input type="text" id="materia" name="materia" value="Física Cuántica" required>
+                </div>
+                 <div class="form-group">
+                    <label for="duracion">Duración (minutos):</label>
+                    <input type="number" id="duracion" name="duracion" value="60" required>
+                </div>
+            </fieldset>
+
+            <button type="submit" id="submit-btn">Solicitar Tutoría</button>
+        </form>
+
+        <div id="resultado">Esperando solicitud...</div>
+    </div>
+
+    <script>
+        const form = document.getElementById('tutoria-form');
+        const resultadoDiv = document.getElementById('resultado');
+        const submitBtn = document.getElementById('submit-btn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            resultadoDiv.textContent = 'Procesando...';
+            resultadoDiv.className = '';
+            submitBtn.disabled = true;
+
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            try {
+                const response = await fetch('/api/solicitar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const resultado = await response.json();
+
+                if (!response.ok) {
+                    // Si el servidor devuelve un error (4xx, 5xx)
+                    throw new Error(resultado.error ? JSON.stringify(resultado.error) : 'Error desconocido');
+                }
+
+                // Éxito
+                resultadoDiv.textContent = JSON.stringify(resultado, null, 2);
+                resultadoDiv.className = 'success';
+
+            } catch (error) {
+                // Error de red o error lanzado
+                resultadoDiv.textContent = `Error: ${error.message}`;
+                resultadoDiv.className = 'error';
+            } finally {
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

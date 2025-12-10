@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-usuarios-deployment
+  labels:
+    app: ms-usuarios
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: ms-usuarios
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ms-usuarios
+    spec:
+      containers:
+        - name: ms-usuarios
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.env.PORT | quote }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.jwtSecretName }}
+                  key: JWT_SECRET
+            - name: JWT_EXPIRES_IN
+              value: {{ .Values.env.JWT_EXPIRES_IN | quote }}
+            - name: DB_HOST
+              value: {{ .Values.env.DB_HOST | quote }}
+            - name: DB_PORT
+              value: {{ .Values.env.DB_PORT | quote }}
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.dbSecretName }}
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.dbSecretName }}
+                  key: password
+            - name: DB_NAME
+              value: {{ .Values.env.DB_NAME | quote }}

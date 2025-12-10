@@ -1,0 +1,9 @@
+replicaCount: 1
+image: tracking-dashboard:1.0
+service:
+  type: ClusterIP
+  port: 9000
+secrets:
+  rabbitmqSecretName: rabbitmq-secret
+rabbitMq:
+  urlKey: RABBITMQ_URL

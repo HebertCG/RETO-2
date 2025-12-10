@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-auth-deployment
+  labels:
+    app: ms-auth
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: ms-auth
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ms-auth
+    spec:
+      containers:
+        - name: ms-auth
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: PORT
+              value: {{ .Values.env.PORT | quote }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.jwtSecretName }}
+                  key: JWT_SECRET
+            - name: JWT_EXPIRES_IN
+              value: {{ .Values.env.JWT_EXPIRES_IN | quote }}
+            - name: MS_USUARIOS_URL
+              value: {{ .Values.env.MS_USUARIOS_URL | quote }}

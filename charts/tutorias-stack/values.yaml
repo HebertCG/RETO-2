@@ -1,0 +1,6 @@
+# Global overrides can go here
+global: {}
+
+ms-agenda:
+  env:
+    LOG_LEVEL: 'info'

@@ -1,0 +1,11 @@
+replicaCount: 1
+image: ms-auth:1.0
+service:
+  type: ClusterIP
+  port: 4000
+env:
+  PORT: "4000"
+  JWT_EXPIRES_IN: "1h"
+  MS_USUARIOS_URL: "http://ms-usuarios-service:3001/usuarios"
+secrets:
+  jwtSecretName: jwt-secret

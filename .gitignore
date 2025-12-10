@@ -1,0 +1,21 @@
+# Archivos temporales
+temp-*.yaml
+*.tmp
+*.log
+
+# Node modules
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Certificados privados (mantener solo el público)
+# No ignorar public-cert.pem ya que es necesario
+
+# Scripts de prueba temporales (opcional)
+# test-*.ps1

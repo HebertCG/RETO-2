@@ -1,0 +1,37 @@
+# prometheus.yml
+global:
+  scrape_interval: 15s # Raspa las métricas cada 15 segundos
+
+scrape_configs:
+  # Monitoreo de Prometheus a sí mismo
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Monitoreo de Microservicios
+  # Usamos los NOMBRES de los contenedores como targets para Prometheus
+  - job_name: 'tutorias-ms-auth'
+    metrics_path: '/metrics' # El endpoint que creaste
+    static_configs:
+      # El nombre del servicio en docker-compose
+      - targets: ['ms-auth:4000'] 
+
+  - job_name: 'tutorias-ms-usuarios'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ms-usuarios:3001'] # Asume que ms-usuarios corre en el puerto 3001
+
+  - job_name: 'tutorias-ms-agenda'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ms-agenda:3002'] # Asume que ms-agenda corre en el puerto 3002
+
+  - job_name: 'tutorias-ms-tutorias'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ms-tutorias:3000'] # Asume que ms-tutorias corre en el puerto 3000
+
+  - job_name: 'tutorias-ms-notificaciones'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['ms-notificaciones:3003'] # Asume que ms-notificaciones corre en el puerto 3003

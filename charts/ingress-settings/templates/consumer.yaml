@@ -1,0 +1,17 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongConsumer
+metadata:
+  name: mobile-app-consumer
+username: mobile-app-consumer
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mobile-app-consumer-jwt-credential
+  annotations:
+    konghq.com/consumer: mobile-app-consumer
+    konghq.com/credential-type: jwt
+type: Opaque
+stringData:
+  key: "e12345"
+  secret: "ESTE_ES_UN_SECRETO_PARA_DESARROLLO_NO_USAR_EN_PROD"

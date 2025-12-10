@@ -1,0 +1,44 @@
+# kubernetes-manifests/tracking-dashboard.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracking-dashboard-service
+  labels:
+    app: tracking-dashboard
+spec:
+  selector:
+    app: tracking-dashboard
+  ports:
+    - protocol: TCP
+      port: 9000
+      targetPort: 9000
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-dashboard-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tracking-dashboard
+  template:
+    metadata:
+      labels:
+        app: tracking-dashboard
+    spec:
+      containers:
+        - name: tracking-dashboard
+          image: tracking-dashboard:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9000
+          env:
+            # --- Conexión a RabbitMQ ---
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: rabbitmq-secret
+                  key: RABBITMQ_URL

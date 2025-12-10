@@ -1,0 +1,11 @@
+replicaCount: 1
+image: ms-notificaciones:1.0
+service:
+  type: ClusterIP
+  port: 3003
+env:
+  PORT: "3003"
+secrets:
+  rabbitmqSecretName: rabbitmq-secret
+rabbitMq:
+  urlKey: RABBITMQ_URL

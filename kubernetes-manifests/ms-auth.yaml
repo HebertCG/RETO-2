@@ -1,0 +1,59 @@
+# kubernetes-manifests/ms-auth.yaml
+
+# 1. Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-auth-service
+  labels:
+    app: ms-auth
+spec:
+  selector:
+    app: ms-auth
+  ports:
+    - protocol: TCP
+      port: 4000
+      targetPort: 4000
+  type: ClusterIP
+---
+
+# 2. Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-auth-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-auth
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ms-auth
+    spec:
+      containers:
+        - name: ms-auth
+          image: ms-auth:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 4000
+          env:
+            # --- Variables de la Aplicación ---
+            - name: PORT
+              value: "4000"
+
+            # --- Variables de Seguridad (JWT) ---
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_SECRET
+            - name: JWT_EXPIRES_IN
+              value: "1h"
+
+            # --- Variables de Conexión a Microservicios ---
+            - name: MS_USUARIOS_URL
+              value: "http://ms-usuarios-service:3001/usuarios"

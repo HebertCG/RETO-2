@@ -1,0 +1,8 @@
+replicaCount: 1
+image: client-mobile-sim:1.0
+service:
+  type: ClusterIP
+  port: 8080
+env:
+  API_BASE_URL: "http://kong-gateway-kong-proxy:8000"
+  AUTH_SERVICE_URL: "http://kong-gateway-kong-proxy:8000/auth"

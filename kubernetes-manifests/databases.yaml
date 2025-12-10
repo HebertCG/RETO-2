@@ -1,0 +1,86 @@
+# kubernetes-manifests/databases.yaml
+
+
+# 1. PersistentVolumeClaim - db-usuarios 
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim-usuarios
+  labels:
+    app: db-usuarios
+spec:
+  # Minikube:
+  # Esto asegura que Minikube aprovisione el volumen correctamente.
+  storageClassName: standard 
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+# 2. Service - db-usuarios
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-usuarios 
+spec:
+  selector:
+    app: db-usuarios
+  ports:
+    - protocol: TCP
+      port: 5432
+      targetPort: 5432
+  type: ClusterIP
+---
+
+# 3. Deployment - db-usuarios 
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-usuarios-deployment
+  labels:
+    app: db-usuarios
+spec:
+  selector:
+    matchLabels:
+      app: db-usuarios
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: db-usuarios
+    spec:
+      securityContext:
+        fsGroup: 1001 
+      containers: 
+      - name: postgres-usuarios
+        image: postgres:14-alpine
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-storage-usuarios
+          mountPath: /var/lib/postgresql/data
+        env:
+          # --- Variables de Entorno de PostgreSQL (COMPLETAS) ---
+          - name: POSTGRES_DB
+            value: db_usuarios
+          - name: POSTGRES_USER 
+            valueFrom:
+              secretKeyRef:
+                name: db-usuarios-secret
+                key: username
+          - name: POSTGRES_PASSWORD 
+            valueFrom:
+              secretKeyRef:
+                name: db-usuarios-secret
+                key: password 
+          # --- Fin Variables de Entorno ---
+
+      volumes:
+      - name: postgres-storage-usuarios
+        persistentVolumeClaim:
+          claimName: postgres-pv-claim-usuarios

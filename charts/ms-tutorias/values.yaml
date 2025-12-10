@@ -1,0 +1,19 @@
+replicaCount: 1
+image: ms-tutorias:1.0
+service:
+  type: ClusterIP
+  port: 3000
+env:
+  PORT: "3000"
+  MS_USUARIOS_URL: "http://ms-usuarios-service:3001/usuarios"
+  MS_AGENDA_URL: "http://ms-agenda-service:3002/agenda"
+  MS_NOTIFICACIONES_URL: "http://ms-notificaciones-service:3003/notificaciones"
+  DB_HOST: "db-tutorias"
+  DB_PORT: "5432"
+  DB_NAME: "db_tutorias"
+secrets:
+  jwtSecretName: jwt-secret
+  dbSecretName: db-tutorias-secret
+  rabbitmqSecretName: rabbitmq-secret
+rabbitMq:
+  urlKey: RABBITMQ_URL

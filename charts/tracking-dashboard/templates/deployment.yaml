@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tracking-dashboard-deployment
+  labels:
+    app: tracking-dashboard
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: tracking-dashboard
+  template:
+    metadata:
+      labels:
+        app: tracking-dashboard
+    spec:
+      containers:
+        - name: tracking-dashboard
+          image: {{ .Values.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ .Values.service.port }}
+          env:
+            - name: RABBITMQ_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secrets.rabbitmqSecretName }}
+                  key: {{ .Values.rabbitMq.urlKey }}

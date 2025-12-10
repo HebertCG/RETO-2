@@ -1,0 +1,42 @@
+# kubernetes-manifests/client-mobile-sim.yaml
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: client-mobile-sim-service
+  labels:
+    app: client-mobile-sim
+spec:
+  selector:
+    app: client-mobile-sim
+  ports:
+    - protocol: TCP
+      port: 8080
+      targetPort: 8080
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: client-mobile-sim-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: client-mobile-sim
+  template:
+    metadata:
+      labels:
+        app: client-mobile-sim
+    spec:
+      containers:
+        - name: client-mobile-sim
+          image: client-mobile-sim:1.0     # CORREGIDO
+          imagePullPolicy: IfNotPresent     # IMPORTANTE
+          ports:
+            - containerPort: 8080
+          env:
+            - name: API_BASE_URL
+              value: "http://kong-gateway-kong-proxy:8000"
+            - name: AUTH_SERVICE_URL
+              value: "http://kong-gateway-kong-proxy:8000/auth"

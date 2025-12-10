@@ -1,0 +1,27 @@
+apiVersion: v2
+name: tutorias-stack
+description: Umbrella Chart for Tutorias Universitarias Stack
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+dependencies:
+  - name: databases
+    version: 0.1.0
+  - name: rabbitmq
+    version: 0.1.0
+  - name: ms-usuarios
+    version: 0.1.0
+  - name: ms-tutorias
+    version: 0.1.0
+  - name: ms-agenda
+    version: 0.1.1
+  - name: ms-auth
+    version: 0.1.0
+  - name: ms-notificaciones
+    version: 0.1.0
+  - name: client-mobile-sim
+    version: 0.1.0
+  - name: tracking-dashboard
+    version: 0.1.0
+  - name: ingress-settings
+    version: 0.1.0

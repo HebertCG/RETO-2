@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tracking-dashboard-service
+  labels:
+    app: tracking-dashboard
+spec:
+  selector:
+    app: tracking-dashboard
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+  type: {{ .Values.service.type }}

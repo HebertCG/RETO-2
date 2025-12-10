@@ -1,0 +1,18 @@
+replicaCount: 2
+image: ms-agenda:1.0
+service:
+  type: ClusterIP
+  port: 3002
+env:
+  PORT: "3002"
+  LOG_LEVEL: "debug"
+  JWT_EXPIRES_IN: "1h"
+  DB_HOST: "db-agenda"
+  DB_PORT: "5432"
+  DB_NAME: "db_agenda"
+secrets:
+  jwtSecretName: jwt-secret
+  dbSecretName: db-agenda-secret
+  rabbitmqSecretName: rabbitmq-secret
+rabbitMq:
+  urlKey: RABBITMQ_URL

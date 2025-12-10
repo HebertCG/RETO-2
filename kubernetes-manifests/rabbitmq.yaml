@@ -1,0 +1,88 @@
+
+# 1. Persistent Volume Claim (PVC) - RabbitMQ
+# Para asegurar que las colas y mensajes persistan.
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: rabbitmq-pv-claim
+  labels:
+    app: rabbitmq
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+
+# 2. Deployment - RabbitMQ
+# Despliega el contenedor de RabbitMQ (con Management UI)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq-deployment
+  labels:
+    app: rabbitmq
+spec:
+  selector:
+    matchLabels:
+      app: rabbitmq
+  replicas: 1 # Queremos una sola instancia de este servicio, para el momento de la resilencia, al borrar queda en 0, automaticamente buscara recrearlo
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+    containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management-alpine # Incluye la interfaz web de gestión
+        ports:
+        - name: amqp # Puerto de comunicación de los microservicios
+          containerPort: 5672
+        - name: management # Puerto de la interfaz web de gestión
+          containerPort: 15672
+        volumeMounts:
+        - name: rabbitmq-storage
+          mountPath: /var/lib/rabbitmq # Ruta de datos de RabbitMQ
+        env:
+        # Nota: En producción, estos valores deberían ser un Secret de K8s.
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: username
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: password
+        volumes:
+      - name: rabbitmq-storage
+        persistentVolumeClaim:
+          claimName: rabbitmq-pv-claim
+---
+
+# 3. Service - RabbitMQ
+# Proporciona un nombre de red estable: rabbitmq:5672
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq # Nombre de DNS interno que usarán tus microservicios
+  labels:
+    app: rabbitmq
+spec:
+  ports:
+    - name: amqp-port
+      port: 5672
+      targetPort: 5672
+      protocol: TCP
+    - name: management-port
+      port: 15672
+      targetPort: 15672
+      protocol: TCP
+  selector:
+    app: rabbitmq
+  type: ClusterIP # Solo accesible internamente

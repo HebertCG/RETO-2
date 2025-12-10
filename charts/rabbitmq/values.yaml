@@ -1,0 +1,5 @@
+image: rabbitmq:3-management-alpine
+storage: 1Gi
+secretName: rabbitmq-secret
+usernameKey: username
+passwordKey: password

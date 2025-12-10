@@ -1,0 +1,14 @@
+replicaCount: 1
+image: ms-usuarios:1.0
+service:
+  type: ClusterIP
+  port: 3001
+env:
+  PORT: "3001"
+  JWT_EXPIRES_IN: "1h"
+  DB_HOST: "db-usuarios"
+  DB_PORT: "5432"
+  DB_NAME: "db_usuarios"
+secrets:
+  jwtSecretName: jwt-secret
+  dbSecretName: db-usuarios-secret

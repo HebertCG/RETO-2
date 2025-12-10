@@ -1,0 +1,5 @@
+postgres:
+  image: postgres:14-alpine
+  storage: 1Gi
+  dbName: db_usuarios
+  secretName: db-usuarios-secret

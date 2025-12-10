@@ -1,0 +1,71 @@
+# kubernetes-manifests/ms-usuarios.yaml
+
+# 1. Service (ClusterIP)
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-usuarios-service
+  labels:
+    app: ms-usuarios
+spec:
+  selector:
+    app: ms-usuarios
+  ports:
+    - protocol: TCP
+      port: 3001
+      targetPort: 3001
+  type: ClusterIP
+---
+
+# 2. Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-usuarios-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ms-usuarios
+  template:
+    metadata:
+      annotations:
+        linkerd.io/inject: enabled
+      labels:
+        app: ms-usuarios
+    spec:
+      containers:
+        - name: ms-usuarios
+          image: ms-usuarios:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3001
+          env:
+            # --- Variables de la Aplicación y Seguridad ---
+            - name: PORT
+              value: "3001"
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-secret
+                  key: JWT_SECRET
+            - name: JWT_EXPIRES_IN
+              value: "1h"
+
+            # --- Conexión a la Base de Datos ---
+            - name: DB_HOST
+              value: "db-usuarios"
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-usuarios-secret
+                  key: username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-usuarios-secret
+                  key: password
+            - name: DB_NAME
+              value: "db_usuarios"
