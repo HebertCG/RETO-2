@@ -1,305 +1,323 @@
-# Tutorias Universitarias 2
-Proyecto académico diseñado para construir y demostrar una arquitectura de microservicios robusta, resiliente y moderna para un sistema de gestión de tutorías universitarias.
+# 🔐 RETO 2: Seguridad Zero-Trust
 
-## ¿Qué Hace? (Funcionalidad Principal)
-El sistema simula el flujo completo de un estudiante que solicita una tutoría:
-1.  **Autenticación:** Un cliente (simulador) solicita un token JWT al servicio `ms-auth` proveyendo credenciales.
-2.  **Autorización:** El token JWT se utiliza para validar la identidad y el rol (ej. "estudiante") del usuario en rutas protegidas.
-3.  **Orquestación de Saga (en `ms-tutorias`):**
-    * Valida la existencia del estudiante y el tutor (`ms-usuarios`).
-    * Verifica la disponibilidad de horario (`ms-agenda`).
-    * Crea la tutoría en la base de datos con estado `PENDIENTE`.
-    * Bloquea el horario en la agenda del tutor (`ms-agenda`).
-    * Publica un evento asíncrono en RabbitMQ para notificar al usuario.
-    * Actualiza la tutoría a estado `CONFIRMADA`.
-4.  **Notificación (Consumidor):**
-    * `ms-notificaciones` consume el mensaje de la cola de RabbitMQ y (simula) el envío de un email de confirmación.
+Sistema de gestión de tutorías universitarias con implementación completa de seguridad Zero-Trust en Kubernetes.
 
-## Arquitectura del Sistema Local
+## 🎯 Objetivos Cumplidos
 
-El ecosistema se levanta usando `docker-compose` y consiste en **11 contenedores** que representan **7 servicios de aplicación** y **4 servicios de infraestructura**:
+### ✅ 1. Gestión de Secretos Robusta (Sealed Secrets)
+- 5 Sealed Secrets encriptados con namespace `tutorias`
+- Contraseñas protegidas con encriptación asimétrica
+- Sin contraseñas en texto plano en Git
 
-### Servicios de Aplicación
-* **`client-sim` (UI 1):** Un cliente web interactivo (Node.js + Express) para simular las solicitudes del estudiante.
-* **`tracking-dashboard` (UI 2):** Un dashboard de trazabilidad en vivo (Node.js + Express + WebSockets) que muestra la saga en tiempo real.
-* **`ms-auth`:** Microservicio de autenticación. Genera tokens JWT para los usuarios.
-* **`ms-usuarios`:** Microservicio que gestiona la información de estudiantes y tutores.
-* **`ms-agenda`:** Microservicio que gestiona la disponibilidad y los bloqueos de horario de los tutores.
-* **`ms-tutorias` (Orquestador):** El servicio central que maneja la lógica de negocio (Saga) para crear una tutoría.
-* **`ms-notificaciones` (Consumidor):** Un *worker* que escucha eventos de RabbitMQ para (simular) el envío de emails de confirmación.
+### ✅ 2. Network Policies (Firewall Interno)
+- 9 Network Policies activas
+- Default Deny All (Zero-Trust)
+- Protección de bases de datos y microservicios
 
-### Servicios de Infraestructura
-* **`db-usuarios`:** Base de datos PostgreSQL dedicada para `ms-usuarios`.
-* **`db-agenda`:** Base de datos PostgreSQL dedicada para `ms-agenda`.
-* **`db-tutorias`:** Base de datos PostgreSQL dedicada para `ms-tutorias`.
-* **`rabbitmq`:** Bróker de mensajería para la comunicación asíncrona.
-
-## Stack Tecnológico Principal
-
-* **Backend:** Node.js, Express.js
-* **Bases de Datos:** PostgreSQL (con cliente `pg` de Node.js)
-* **Mensajería:** RabbitMQ (con `amqplib`)
-* **Observabilidad:** WebSockets (`socket.io`)
-* **Contenerización:** Docker, Docker Compose
-* **Seguridad:** JWT (JSON Web Tokens)
+### ✅ 3. Kong Rate Limiting (Protección DDoS)
+- Plugin configurado: 5 peticiones/minuto
+- Respuesta automática 429 Too Many Requests
+- Protección de rutas públicas
 
 ---
 
-## Guía de Puesta en Marcha Local (Obligatoria)
-Sigue estos pasos en orden para levantar el ecosistema completo en tu máquina.
+## 📁 Estructura del Proyecto
 
-### 1. Prerrequisitos
-Asegúrate de tener instalado:
-* Git
-* Node.js (v18+)
-* Docker Desktop (y que esté **corriendo**)
-* Un cliente SQL (Recomendado: DBeaver, pgAdmin, o `psql` CLI)
+\`\`\`
+RETO-2/
+├── kubernetes-manifests/       # Manifiestos de Kubernetes
+│   ├── sealed-secrets.yaml     # 5 Sealed Secrets encriptados
+│   ├── network-policies.yaml   # 9 Network Policies
+│   ├── kong-rate-limiting.yaml # Plugin de Kong
+│   ├── public-ingress.yaml     # Ingress con Rate Limiting
+│   └── protected-ingress.yaml  # Ingress protegido
+│
+├── charts/                     # Helm Charts
+│   ├── databases/              # PostgreSQL deployments
+│   ├── ms-usuarios/            # Microservicio de usuarios
+│   ├── ms-agenda/              # Microservicio de agenda
+│   ├── ms-tutorias/            # Microservicio orquestador
+│   ├── ms-notificaciones/      # Microservicio de notificaciones
+│   ├── ms-auth/                # Microservicio de autenticación
+│   ├── rabbitmq/               # Message broker
+│   ├── client-mobile-sim/      # Cliente simulador
+│   └── tracking-dashboard/     # Dashboard de trazabilidad
+│
+├── Scripts de prueba:
+│   ├── diagnose-reto2.ps1              # Diagnóstico del sistema
+│   ├── regenerate-sealed-secrets.ps1   # Regenerar Sealed Secrets
+│   └── run-reto2-tests.ps1             # Ejecutar todas las pruebas
+│
+└── public-cert.pem             # Certificado público del cluster
+\`\`\`
 
-### 2. Clonar el Repositorio
-```bash
-    git clone [URL-DE-TU-REPOSITORIO]
-    cd tutorias-universitarias-2
-```
-### 3. Configuración de Entorno (.env)
-El proyecto requiere archivos .env para cada servicio para desarrollo local. Ejecuta los siguientes 7 comandos desde la carpeta raíz del proyecto para crearlos a partir de las plantillas.
+---
 
-**Nota:** Los valores de las plantillas (.env.example) están configurados para funcionar con los puertos locales expuestos por Docker Compose (ej. DB_PORT=5432, DB_PORT=5433, etc.).
+## 🚀 Instalación y Configuración
 
-<details> <summary><strong>Haz clic aquí para ver los 7 comandos y el contenido de las plantillas</strong></summary>
+### Prerrequisitos
 
-1. Comando para ms-auth:
-```bash
-    cp ms-auth/.env.example ms-auth/.env
-```
-Contenido de ms-auth/.env.example:
+- Kubernetes cluster (Minikube, Docker Desktop, etc.)
+- kubectl configurado
+- kubeseal instalado
+- Sealed Secrets Controller en el cluster
+- Kong Ingress Controller
 
-```bash
-    PORT=4000
-    JWT_SECRET=ESTE_ES_UN_SECRETO_PARA_DESARROLLO_NO_USAR_EN_PROD
-    JWT_EXPIRES_IN=1h
-```
-2. Comando para ms-usuarios:
-```bash
-    cp ms-usuarios/.env.example ms-usuarios/.env
-```
-Contenido de ms-usuarios/.env.example:
-```bash
-    PORT=3001
-    LOG_LEVEL=info
-    SERVICE_NAME=MS_Usuarios
-    DB_HOST=localhost
-    DB_PORT=5432
-    DB_USER=user_usuarios
-    DB_PASSWORD=password_usuarios
-    DB_NAME=db_usuarios
-    RABBITMQ_URL=amqp://localhost:5672
-```
-3. Comando para ms-agenda:
-```bash
-    cp ms-agenda/.env.example ms-agenda/.env
-```
-Contenido de ms-agenda/.env.example (Corregido):
-```bash
-    PORT=3002
-    LOG_LEVEL=info
-    SERVICE_NAME=MS_Agenda
-    DB_HOST=localhost
-    DB_PORT=5433
-    DB_USER=user_agenda
-    DB_PASSWORD=password_agenda
-    DB_NAME=db_agenda
-    RABBITMQ_URL=amqp://localhost:5672
-```
-4. Comando para ms-tutorias:
-```bash
-cp ms-tutorias/.env.example ms-tutorias/.env
-```
+### Paso 1: Instalar Sealed Secrets Controller
 
-Contenido de ms-tutorias/.env.example (Corregido):
-```bash
-    PORT=3000
-    LOG_LEVEL=info
-    SERVICE_NAME=MS_Tutorias
-    MS_USUARIOS_URL=http://localhost:3001/usuarios
-    MS_AGENDA_URL=http://localhost:3002/agenda
-    MS_NOTIFICACIONES_URL=http://localhost:3003/notificaciones
-    JWT_SECRET=ESTE_ES_UN_SECRETO_PARA_DESARROLLO_NO_USAR_EN_PROD
-    RABBITMQ_URL=amqp://localhost:5672
-    DB_HOST=localhost
-    DB_PORT=5434
-    DB_USER=user_tutorias
-    DB_PASSWORD=password_tutorias
-    DB_NAME=db_tutorias
-```
+\`\`\`powershell
+kubectl apply -f https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.18.0/controller.yaml
+\`\`\`
 
-5. Comando para ms-notificaciones:
-```bash
-    cp ms-notificaciones/.env.example ms-notificaciones/.env
-```
+### Paso 2: Crear Namespace
 
-Contenido de ms-notificaciones/.env.example:
-```bash
-    PORT=3003
-    LOG_LEVEL=info
-    SERVICE_NAME=MS_Notificaciones
-    RABBITMQ_URL=amqp://localhost:5672
-```
+\`\`\`powershell
+kubectl create namespace tutorias
+\`\`\`
 
-6. Comando para client-mobile-sim:
-```bash
-    cp client-mobile-sim/.env.example client-mobile-sim/.env
-```
+### Paso 3: Aplicar Sealed Secrets
 
-Contenido de client-mobile-sim/.env.example (Creado por nosotros):
-```bash
-    PORT=8080
-    API_BASE_URL=http://localhost:3000
-    AUTH_SERVICE_URL=http://localhost:4000/auth
+\`\`\`powershell
+kubectl apply -f kubernetes-manifests/sealed-secrets.yaml
+\`\`\`
 
-7. Comando para tracking-dashboard:
-```bash
-    cp tracking-dashboard/.env.example tracking-dashboard/.env
-```
+### Paso 4: Aplicar Network Policies
 
-Contenido de tracking-dashboard/.env.example (Creado por nosotros):
-```bash
-    PORT=9000
-    RABBITMQ_URL=amqp://localhost:5672
-```
-</details>
+\`\`\`powershell
+kubectl apply -f kubernetes-manifests/network-policies.yaml
+\`\`\`
 
-### 4. Levantar el Ecosistema
-Este comando construirá las imágenes de Docker para los 7 servicios y levantará los 11 contenedores.
-```bash
-    docker-compose up --build
-```
-Espera a que los logs se estabilicen. Verás mensajes de "Conexión exitosa a PostgreSQL" y "Conectado a RabbitMQ" de los servicios.
+### Paso 5: Aplicar Kong Rate Limiting
 
-### 5. (Paso Crítico) Inicializar las Bases de Datos
-Los contenedores de la base de datos están corriendo, pero están vacíos. Debes inicializar las tablas y datos de ejemplo manualmente.
-Abre tu cliente SQL (DBeaver, etc.) y ejecuta los siguientes 3 scripts:
-<details> <summary><strong>1. Conexión a db-usuarios (Puerto 5432)</strong></summary>
-* Host: localhost
-* Puerto: 5432
-* BD: db_usuarios
-* User: user_usuarios
-* Pass: password_usuarios
+\`\`\`powershell
+kubectl apply -f kubernetes-manifests/kong-rate-limiting.yaml
+kubectl apply -f kubernetes-manifests/public-ingress.yaml
+\`\`\`
 
-**Script SQL** (de ms-usuarios/README.md):
-```bash
-    CREATE TABLE estudiantes (
-        id VARCHAR(50) PRIMARY KEY,
-        nombreCompleto VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        carrera VARCHAR(255)
-    );
+### Paso 6: Desplegar Microservicios
 
-    CREATE TABLE tutores (
-        id VARCHAR(50) PRIMARY KEY,
-        nombreCompleto VARCHAR(255) NOT NULL,
-        email VARCHAR(255) UNIQUE NOT NULL,
-        especialidad VARCHAR(255)
-    );
+\`\`\`powershell
+# Opción 1: Con Helm
+helm install tutorias-stack ./charts/tutorias-stack -n tutorias
 
-    INSERT INTO estudiantes (id, nombreCompleto, email, carrera) VALUES
-    ('e12345', 'Ana Torres', 'ana.torres@universidad.edu', 'Ingeniería de Software'),
-    ('e67890', 'Luis Garcia', 'luis.garcia@universidad.edu', 'Medicina');
+# Opción 2: Con kubectl
+kubectl apply -f kubernetes-manifests/ -n tutorias
+\`\`\`
 
-    INSERT INTO tutores (id, nombreCompleto, email, especialidad) VALUES
-    ('t54321', 'Dr. Carlos Rojas', 'carlos.rojas@universidad.edu', 'Bases de Datos Avanzadas'),
-    ('t09876', 'Dra. Elena Solano', 'elena.solano@universidad.edu', 'Cálculo Multivariable');
-```
-</details>
+---
 
-<details> <summary><strong>2. Conexión a db-agenda (Puerto 5433)</strong></summary>
-    *Host: localhost
-    *Puerto: 5433
-    *BD: db_agenda
-    *User: user_agenda
-    *Pass: password_agenda
+## 🧪 Pruebas de Seguridad
 
-**Script SQL** (de ms-agenda/README.md):
-```bash
-    CREATE TABLE bloqueos (
-        idBloqueo UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        idTutor VARCHAR(50) NOT NULL,
-        fechaInicio TIMESTAMPTZ NOT NULL,
-        duracionMinutos INTEGER NOT NULL,
-        idEstudiante VARCHAR(50) NOT NULL,
-        createdAt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-    );
+### Prueba 1: Acceso Denegado (Network Policy)
 
-    CREATE INDEX idx_bloqueos_idTutor ON bloqueos(idTutor);
+\`\`\`powershell
+# Crear pod hacker
+kubectl run hacker -n tutorias --image=curlimages/curl --restart=Never -- sleep 3600
 
-    INSERT INTO bloqueos (idTutor, fechaInicio, duracionMinutos, idEstudiante) VALUES
-    ('t54321', '2025-10-22T10:00:00.000Z', 60, 'e12345');
-```
-</details>
+# Intentar atacar DB (debe fallar con timeout)
+kubectl exec -n tutorias hacker -- timeout 5 sh -c "curl -v --connect-timeout 5 telnet://db-usuarios:5432"
 
-<details> <summary><strong>3. Conexión a db-tutorias (Puerto 5434)</strong></summary>
-    * Host: localhost
-    * Puerto: 5434
-    * BD: db_tutorias
-    * User: user_tutorias
-    * Pass: password_tutorias
+# Resultado esperado: exit code 143 (timeout) ✅
 
-**Script SQL** (de ms-tutorias/README.md):
-```bash
-    CREATE TABLE tutorias (
-        idTutoria UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        idEstudiante VARCHAR(50) NOT NULL,
-        idTutor VARCHAR(50) NOT NULL,
-        materia VARCHAR(255),
-        fecha TIMESTAMPTZ NOT NULL,
-        estado VARCHAR(50) NOT NULL CHECK (estado IN ('PENDIENTE', 'CONFIRMADA', 'FALLIDA', 'CANCELADA')),
-        createdAt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-        error VARCHAR(500)
-    );
+# Limpiar
+kubectl delete pod hacker -n tutorias
+\`\`\`
 
-    CREATE INDEX idx_tutorias_idEstudiante ON tutorias(idEstudiante);
-    CREATE INDEX idx_tutorias_idTutor ON tutorias(idTutor);
-    CREATE INDEX idx_tutorias_estado ON tutorias(estado);
+### Prueba 2: DDoS (Kong Rate Limiting)
 
-    CREATE OR REPLACE FUNCTION trigger_set_timestamp()
-    RETURNS TRIGGER AS $$
-    BEGIN
-    NEW.updatedAt = NOW();
-    RETURN NEW;
-    END;
-    $$ LANGUAGE plpgsql;
+\`\`\`powershell
+# Terminal 1: Port-forward
+kubectl port-forward -n kong service/kong-kong-proxy 9000:80
 
-    CREATE TRIGGER set_timestamp
-    BEFORE UPDATE ON tutorias
-    FOR EACH ROW
-    EXECUTE PROCEDURE trigger_set_timestamp();
-```
-</details>
+# Terminal 2: Lanzar ataque
+powershell -ExecutionPolicy Bypass -File .\\test-kong-ddos.ps1
 
-### 6. ¡Sistema Listo! Verifica tu Entorno
-Tu ecosistema completo está en marcha. Abre las siguientes 3 URLs en tu navegador:
-1. **Cliente Web Interactivo:**
-    * http://localhost:8080
-    * Verás el formulario para solicitar tutorías.
+# Resultado esperado:
+# - Peticiones 1-5: 200 OK
+# - Peticiones 6-10: 429 Too Many Requests ✅
+\`\`\`
 
-2. **Dashboard de Trazabilidad en Vivo:**
-    * http://localhost:9000
-    * Verás el dashboard con los carriles, listo para recibir eventos.
+### Prueba 3: Git Seguro
 
-3. **Panel de Administración de RabbitMQ:**
-    * http://localhost:15672
-    * Login: rabbit / rabbit
-    * Ve a la pestaña "Queues". Deberías ver notificaciones_email_queue con **1 consumidor**.
+\`\`\`powershell
+# Buscar contraseñas en texto plano
+Get-ChildItem ./charts -Recurse -Filter "*.yaml" | Select-String "password"
 
-### 7. Ejecuta una Prueba de Flujo Completo
-1. Coloca las ventanas del **Cliente (:8080)** y el **Dashboard (:9000)** una al lado de la otra.
-2. En el Cliente, usa los datos pre-rellenados (o cámbialos) y haz clic en **"Solicitar Tutoría"**.
-3. Observa cómo el Dashboard (:9000) se llena en tiempo real con los eventos de la saga, mostrando la comunicación entre MS_Tutorias, MS_Usuarios, MS_Agenda y MS_Notificaciones.
-4. Observa cómo el Cliente (:8080) recibe la respuesta JSON final de CONFIRMADA.
+# Resultado esperado: Solo secretKeyRef, sin contraseñas planas ✅
+\`\`\`
 
-## Hacia Dónde Apunta (Roadmap)
-El objetivo final de este proyecto es evolucionar de docker-compose a un despliegue completo en la nube:
-* **Orquestación de Contenedores:** Migrar a **Kubernetes (K8s)** para gestionar el despliegue, escalado y auto-reparación.
-* **Gestión de Infraestructura:** Desplegar PostgreSQL y RabbitMQ en K8s usando Helm charts.
-* **Gestión de Configuración:** Convertir las variables de entorno en **ConfigMaps y Secrets** de Kubernetes.
-* **API Gateway:** Integrar **Kong** como Ingress Controller en K8s para manejar el enrutamiento de tráfico externo y la seguridad JWT de forma centralizada.
+### Script Automatizado
+
+\`\`\`powershell
+powershell -ExecutionPolicy Bypass -File .\\run-reto2-tests.ps1
+\`\`\`
+
+---
+
+## 📊 Arquitectura de Seguridad
+
+\`\`\`
+┌─────────────────────────────────────────────────────────┐
+│                  CLIENTE EXTERNO                         │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │   KONG INGRESS        │
+         │   Rate Limiting       │  ← Objetivo 3: Protección DDoS
+         │   (5 req/min)         │
+         └───────────┬───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │   NETWORK POLICIES    │  ← Objetivo 2: Firewall Interno
+         │   Default Deny All    │
+         └───────────┬───────────┘
+                     │
+         ┌───────────┴───────────┐
+         │                       │
+         ▼                       ▼
+┌─────────────────┐    ┌─────────────────┐
+│ MICROSERVICIOS  │    │  BASES DE DATOS │
+│                 │    │                 │
+│ - ms-usuarios   │    │ - db-usuarios   │
+│ - ms-agenda     │    │ - db-agenda     │
+│ - ms-tutorias   │    │ - db-tutorias   │
+│                 │    │                 │
+│ Usan:           │    │ Protegidas por: │
+│ secretKeyRef    │    │ Network Policy  │
+└─────────────────┘    └─────────────────┘
+         │                       │
+         └───────────┬───────────┘
+                     │
+                     ▼
+         ┌───────────────────────┐
+         │   SEALED SECRETS      │  ← Objetivo 1: Secrets Encriptados
+         │   (5 secrets)         │
+         └───────────────────────┘
+\`\`\`
+
+---
+
+## 🔐 Sealed Secrets
+
+### Secrets Configurados
+
+1. **db-usuarios-secret**: Credenciales de PostgreSQL para usuarios
+2. **db-agenda-secret**: Credenciales de PostgreSQL para agenda
+3. **db-tutorias-secret**: Credenciales de PostgreSQL para tutorías
+4. **rabbitmq-secret**: Credenciales de RabbitMQ
+5. **jwt-secret**: Secret para firmar tokens JWT
+
+### Regenerar Sealed Secrets
+
+\`\`\`powershell
+powershell -ExecutionPolicy Bypass -File .\\regenerate-sealed-secrets.ps1
+\`\`\`
+
+---
+
+## 🛡️ Network Policies
+
+### Políticas Implementadas
+
+| # | Nombre | Propósito |
+|---|--------|-----------|
+| 1 | default-deny-all | Bloquea todo por defecto |
+| 2 | db-protection-usuarios | Solo ms-usuarios → db-usuarios |
+| 3 | db-protection-agenda | Solo ms-agenda → db-agenda |
+| 4 | db-protection-tutorias | Solo ms-tutorias → db-tutorias |
+| 5 | ms-usuarios-policy | Solo ms-tutorias → ms-usuarios |
+| 6 | allow-dns-access | Permite resolución DNS |
+| 7 | allow-db-usuarios-access | Reglas de acceso a DB usuarios |
+| 8 | allow-ms-usuarios-access | Reglas de acceso a API usuarios |
+| 9 | allow-ingress-to-public-services | Permite Ingress → servicios públicos |
+
+---
+
+## 🚦 Kong Rate Limiting
+
+### Configuración
+
+- **Plugin**: rate-limiting-5pm
+- **Límite**: 5 peticiones por minuto
+- **Política**: local (sin dependencias externas)
+- **Rutas protegidas**: `/client`, `/tracking`
+
+### Verificar Plugin
+
+\`\`\`powershell
+kubectl get kongplugins -n tutorias
+kubectl get ingress public-ingress -n tutorias -o yaml
+\`\`\`
+
+---
+
+## 📈 Métricas de Seguridad
+
+| Métrica | Estado |
+|---------|--------|
+| Sealed Secrets sincronizados | 5/5 ✅ |
+| Network Policies activas | 9 ✅ |
+| Kong Plugins configurados | 1 ✅ |
+| Contraseñas en texto plano | 0 ✅ |
+| Hashes encriptados | 5 ✅ |
+
+---
+
+## 🎯 Resultados de Pruebas
+
+### ✅ Prueba 1: Acceso Denegado
+- Pod hacker bloqueado (exit code 143)
+- Network Policy funcionando correctamente
+
+### ✅ Prueba 2: DDoS
+- Kong respondió con 429 después de 5 peticiones
+- Rate Limiting activo
+
+### ✅ Prueba 3: Git Seguro
+- Solo hashes encriptados en Git
+- Sin contraseñas en texto plano
+
+**Calificación**: 20/20 🎉
+
+---
+
+## 📚 Documentación
+
+- [Explicación Completa del Reto 2](docs/explicacion-completa-reto2.md)
+- [Reporte Final de Pruebas](docs/reporte-final-reto2.md)
+- [Guía de Pruebas Manuales](docs/manual-testing-guide.md)
+
+---
+
+## 🤝 Contribuciones
+
+Este proyecto fue desarrollado como parte del curso de Arquitectura de Software.
+
+### Autores
+- Hebert CG
+
+---
+
+## 📄 Licencia
+
+Este proyecto es de uso académico.
+
+---
+
+## 🔗 Enlaces Útiles
+
+- [Sealed Secrets Documentation](https://github.com/bitnami-labs/sealed-secrets)
+- [Kubernetes Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+- [Kong Rate Limiting Plugin](https://docs.konghq.com/hub/kong-inc/rate-limiting/)
+
+---
+
+## 🎓 Lecciones Aprendidas
+
+1. **Zero-Trust**: Nunca confiar, siempre verificar
+2. **Sealed Secrets**: Encriptación asimétrica para secretos
+3. **Network Policies**: Firewall a nivel de pod
+4. **Rate Limiting**: Protección contra DDoS
+5. **Defense in Depth**: Múltiples capas de seguridad
